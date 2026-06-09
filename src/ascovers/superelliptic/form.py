@@ -32,8 +32,20 @@ class SuperellipticForm:
 
     def __init__(self, curve, expression):
         '''Create the differential form represented by expression times dx.'''
+        from ascovers.superelliptic.function import SuperellipticFunction
+
+        if isinstance(expression, SuperellipticForm):
+            if expression.curve is not curve:
+                raise TypeError("cannot coerce a form from a different curve")
+            coefficient = expression.form
+        elif isinstance(expression, SuperellipticFunction):
+            if expression.curve is not curve:
+                raise TypeError("cannot coerce a function from a different curve")
+            coefficient = expression
+        else:
+            coefficient = SuperellipticFunction(curve, reduction_form(curve, expression))
         self.curve = curve
-        self.form = curve.function_field(reduction_form(curve, expression))
+        self.form = coefficient
 
     def __eq__(self, other):
         '''Return whether two forms have the same reduced coefficient.'''
@@ -70,16 +82,14 @@ class SuperellipticForm:
         if isinstance(other, SuperellipticFunction):
             if other.curve is not self.curve:
                 raise TypeError("cannot multiply objects on different curves")
-            return SuperellipticForm(self.curve, other.function * self.form)
+            return SuperellipticForm(self.curve, other * self.form)
         return SuperellipticForm(self.curve, other * self.form)
 
     def __truediv__(self, other):
         '''Return the quotient of coefficients of two differential forms.'''
-        from ascovers.superelliptic.function import SuperellipticFunction
-
         if other.curve is not self.curve:
             raise TypeError("cannot divide forms on different curves")
-        return SuperellipticFunction(self.curve, self.form / other.form)
+        return self.form / other.form
 
     def cartier(self):
         '''Compute the Cartier operator on this differential form.'''
@@ -144,9 +154,9 @@ class SuperellipticForm:
         if basis == 0:
             basis = self.curve.holomorphic_differentials_basis()
         _function_field, coordinate_ring, _x_coordinate, _y_coordinate = self.curve.fct_field
-        common_denominator = LCM([omega.form.denominator() for omega in basis])
-        basis_without_denominators = [common_denominator * omega.form for omega in basis]
-        form_without_denominator = common_denominator * self.form
+        common_denominator = LCM([omega.form.function.denominator() for omega in basis])
+        basis_without_denominators = [common_denominator * omega.form.function for omega in basis]
+        form_without_denominator = common_denominator * self.form.function
         return linear_representation_polynomials(
             coordinate_ring(form_without_denominator),
             [coordinate_ring(omega) for omega in basis_without_denominators],
@@ -156,7 +166,7 @@ class SuperellipticForm:
         '''Return h_j(x) when this form is written as sum_j h_j(x) dx / y^j.'''
         m = int(self.curve.exponent)
         _function_field, _coordinate_ring, x_coordinate, y_coordinate = self.curve.fct_field
-        reduced = reduction(self.curve, y_coordinate ** m * self.form)
+        reduced = reduction(self.curve, y_coordinate ** m * self.form.function)
         polynomial_y, _polynomial_ring_y, x_auxiliary, _y_auxiliary, _x, _y = (
             _expression_to_polynomial_in_y(self.curve, reduced)
         )
@@ -187,24 +197,18 @@ class SuperellipticForm:
 
     def expansion_at_infty(self, place=0, prec=10):
         '''Return the Laurent expansion at a place above infinity.'''
-        from ascovers.superelliptic.function import SuperellipticFunction
-
         if not self.curve.dx_series or prec > self.curve.precision:
             self.curve.compute_expansions_at_infinity(prec)
         series_ring = LaurentSeriesRing(self.curve.base_ring, "t", default_prec=int(prec))
-        coefficient = SuperellipticFunction(self.curve, self.form)
-        coefficient_series = series_ring(coefficient.expansion_at_infty(place=place, prec=prec))
+        coefficient_series = series_ring(self.form.expansion_at_infty(place=place, prec=prec))
         return coefficient_series * series_ring(self.curve.dx_series[int(place)])
 
     def expansion(self, point, prec=50):
         '''Return the Laurent expansion in the completed local ring at a point.'''
-        from ascovers.superelliptic.function import SuperellipticFunction
-
         if point in ZZ:
             return self.expansion_at_infty(place=point, prec=prec)
         dx_series = self.curve.x.expansion(point=point, prec=prec).derivative()
-        coefficient = SuperellipticFunction(self.curve, self.form)
-        return coefficient.expansion(point=point, prec=prec) * dx_series
+        return self.form.expansion(point=point, prec=prec) * dx_series
 
     def residue(self, place=0, prec=30):
         '''Return the residue at a place above infinity.'''
@@ -212,12 +216,12 @@ class SuperellipticForm:
 
     def reduce(self):
         '''Return this form with its coefficient reduced again.'''
-        return SuperellipticForm(self.curve, reduction(self.curve, self.form))
+        return SuperellipticForm(self.curve, reduction(self.curve, self.form.function))
 
     def reduce2(self):
         '''Return this form after reducing y^m times its coefficient.'''
         _function_field, _coordinate_ring, _x_coordinate, y_coordinate = self.curve.fct_field
-        expression = reduction(self.curve, y_coordinate ** self.curve.exponent * self.form)
+        expression = reduction(self.curve, y_coordinate ** self.curve.exponent * self.form.function)
         return SuperellipticForm(self.curve, expression / y_coordinate ** self.curve.exponent)
 
     def integral(self):

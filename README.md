@@ -43,4 +43,5 @@ The first migrated module is `ascovers.superelliptic.curve`, which defines
 `SuperellipticCurve` and the compatibility alias `superelliptic`.  The
 function and form modules define `SuperellipticFunction`,
 `SuperellipticForm`, and the legacy aliases `superelliptic_function` and
-`superelliptic_form`.
+`superelliptic_form`.  Cech-de Rham cocycles are represented by
+`SuperellipticDeRhamCocycle`, with legacy alias `superelliptic_cech`.

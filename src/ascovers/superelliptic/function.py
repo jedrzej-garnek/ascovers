@@ -11,6 +11,10 @@ class SuperellipticFunction:
 
     def __init__(self, curve, expression):
         '''Create the function represented by an expression in x and y.'''
+        if isinstance(expression, SuperellipticFunction):
+            if expression.curve is not curve:
+                raise TypeError("cannot coerce a function from a different curve")
+            expression = expression.function
         self.curve = curve
         self.function = reduction(curve, expression)
 
@@ -69,7 +73,7 @@ class SuperellipticFunction:
         if isinstance(other, SuperellipticForm):
             if other.curve is not self.curve:
                 raise TypeError("cannot multiply objects on different curves")
-            return SuperellipticForm(self.curve, self.function * other.form)
+            return SuperellipticForm(self.curve, self * other.form)
         return SuperellipticFunction(self.curve, self.function * self._coerce_expression(other))
 
     def __rmul__(self, other):

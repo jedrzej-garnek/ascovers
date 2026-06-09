@@ -12,12 +12,14 @@ except ModuleNotFoundError:  # pragma: no cover - exercised outside Sage.
 
 if GF is not None:
     from ascovers import (
+        SuperellipticDeRhamCocycle,
         SuperellipticCurve,
         SuperellipticForm,
         SuperellipticFunction,
         reduction,
         reduction_form,
         superelliptic,
+        superelliptic_cech,
     )
 
 
@@ -61,6 +63,7 @@ class SuperellipticCurveTest(unittest.TestCase):
         self.assertIsInstance(curve.x, SuperellipticFunction)
         self.assertIsInstance(curve.y, SuperellipticFunction)
         self.assertIsInstance(curve.dx, SuperellipticForm)
+        self.assertIsInstance(curve.dx.form, SuperellipticFunction)
 
     def test_holomorphic_differential_basis_degrees(self):
         '''Check the holomorphic differential basis and degree dictionary.'''
@@ -149,6 +152,21 @@ class SuperellipticCurveTest(unittest.TestCase):
 
         self.assertEqual(vector(form.coordinates(basis=basis)), vector(coefficients))
 
+    def test_form_coefficient_is_superelliptic_function(self):
+        '''Check that forms store their coefficient as a superelliptic function.'''
+        field = GF(5)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 + x + 1, 2)
+
+        omega = curve.y * curve.dx
+        self.assertIsInstance(omega.form, SuperellipticFunction)
+        self.assertEqual(omega.form, curve.y)
+        self.assertEqual(
+            omega.expansion_at_infty(prec=40),
+            curve.y.expansion_at_infty(prec=40) * curve.dx_series[0],
+        )
+
     def test_function_expansion_at_infinity(self):
         '''Check expansions of x and y at infinity.'''
         field = GF(3)
@@ -187,6 +205,44 @@ class SuperellipticCurveTest(unittest.TestCase):
         sage_curve = HyperellipticCurve(polynomial)
 
         self.assertEqual(curve.a_number(), sage_curve.a_number())
+
+    def test_de_rham_cocycle_construction(self):
+        '''Check construction and aliases for Cech-de Rham cocycles.'''
+        field = GF(5)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 + x + 1, 2)
+
+        cocycle = SuperellipticDeRhamCocycle(curve, curve.dx, curve.x)
+        legacy_cocycle = superelliptic_cech(curve, curve.dx, curve.x)
+
+        self.assertIsInstance(cocycle, SuperellipticDeRhamCocycle)
+        self.assertEqual(cocycle, legacy_cocycle)
+        self.assertEqual(cocycle.omega8, 0 * curve.dx)
+        self.assertTrue(cocycle.is_valid())
+
+    def test_de_rham_basis_cocycles_and_coordinates(self):
+        '''Check the migrated de Rham basis consists of Cech-de Rham cocycles.'''
+        field = GF(5)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 + x + 1, 2)
+        de_rham_basis = curve.de_rham_basis()
+
+        self.assertEqual(len(de_rham_basis), 2 * curve.genus())
+        for index, cocycle in enumerate(de_rham_basis):
+            self.assertIsInstance(cocycle, SuperellipticDeRhamCocycle)
+            self.assertTrue(cocycle.is_valid())
+            expected = [field.zero()] * len(de_rham_basis)
+            expected[index] = field.one()
+            self.assertEqual(cocycle.coordinates(basis=(
+                curve.holomorphic_differentials_basis(),
+                curve.cohomology_of_structure_sheaf_basis(),
+                de_rham_basis,
+            )), vector(field, expected))
+
+        self.assertEqual(curve.verschiebung_matrix().dimensions(), (2, 2))
+        self.assertEqual(curve.dr_frobenius_matrix().dimensions(), (2, 2))
 
 
 if __name__ == "__main__":

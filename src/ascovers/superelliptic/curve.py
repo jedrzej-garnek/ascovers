@@ -174,7 +174,12 @@ class SuperellipticCurve:
         '''Return the migrated Cech-cocycle class for this curve.'''
         return self._load_migrated_class(
             ("cech", "superelliptic_cech"),
-            ("SuperellipticCech", "superelliptic_cech"),
+            (
+                "SuperellipticDeRhamCocycle",
+                "SuperellipticCechCocycle",
+                "SuperellipticCech",
+                "superelliptic_cech",
+            ),
             "Cech cocycles on superelliptic curves",
         )
 
