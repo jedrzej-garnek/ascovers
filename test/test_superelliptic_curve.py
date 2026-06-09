@@ -16,6 +16,8 @@ if GF is not None:
         SuperellipticCurve,
         SuperellipticForm,
         SuperellipticFunction,
+        decomposition_g0_g8,
+        decomposition_omega0_omega8,
         reduction,
         reduction_form,
         superelliptic,
@@ -243,6 +245,64 @@ class SuperellipticCurveTest(unittest.TestCase):
 
         self.assertEqual(curve.verschiebung_matrix().dimensions(), (2, 2))
         self.assertEqual(curve.dr_frobenius_matrix().dimensions(), (2, 2))
+
+    def test_general_cech_coordinates_and_decomposition(self):
+        '''Check mixed Cech coordinates through the migrated decomposition helper.'''
+        field = GF(5)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 + x + 1, 2, prec=80)
+        basis = (
+            curve.holomorphic_differentials_basis(),
+            curve.cohomology_of_structure_sheaf_basis(),
+            curve.de_rham_basis(),
+        )
+
+        mixed_cocycle = basis[2][0] + basis[2][1]
+        self.assertEqual(mixed_cocycle.coordinates(basis=basis), vector(field, [1, 1]))
+
+        function = ((curve.x ** 4 + curve.one) / (curve.x ** 2)) * curve.y
+        affine_part, infinity_part, cohomology_part = decomposition_g0_g8(function, prec=80)
+        self.assertEqual(affine_part - infinity_part + cohomology_part, function)
+        self.assertGreaterEqual(infinity_part.expansion_at_infty(prec=80).valuation(), 0)
+
+    def test_form_decomposition_between_standard_charts(self):
+        '''Check decomposition of a residue-free form between the two charts.'''
+        field = GF(3)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 - x, 2, prec=120)
+        omega = (
+            (
+                (
+                    2 * curve.x ** 18
+                    + 2 * curve.x ** 16
+                    + 2 * curve.x ** 14
+                    + 2 * curve.x ** 10
+                    + 2 * curve.x ** 8
+                    + 2 * curve.x ** 4
+                    + 2 * curve.x ** 2
+                    + 2 * curve.one
+                )
+                / (curve.x ** 13 + curve.x ** 11 + curve.x ** 9)
+            )
+            * curve.y
+        ) * curve.dx
+
+        affine_form, infinity_form = decomposition_omega0_omega8(omega, prec=80)
+        self.assertEqual(affine_form - infinity_form, omega)
+        self.assertTrue(affine_form.is_regular_on_U0())
+        self.assertTrue(infinity_form.is_regular_on_Uinfty())
+
+    def test_inverse_cartier_preimage(self):
+        '''Check the explicit inverse Cartier preimage formula.'''
+        field = GF(5)
+        polynomial_ring = PolynomialRing(field, "x")
+        x = polynomial_ring.gen()
+        curve = SuperellipticCurve(x ** 3 + x + 1, 2, prec=80)
+        omega = curve.holomorphic_differentials_basis()[0]
+
+        self.assertEqual(omega.inv_cartier().cartier(), omega)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,6 @@ from sage.all import (
 
 from ascovers.linear_algebra import linear_representation_polynomials
 from ascovers.superelliptic.curve import _expression_to_polynomial_in_y, reduction, reduction_form
-from ascovers.superelliptic.exceptions import PendingMigrationError
 from ascovers.superelliptic.utils import degree_of_rational_function, polynomial_part
 
 
@@ -268,15 +267,15 @@ class SuperellipticForm:
         return result
 
     def inv_cartier(self):
-        '''Return a preimage under Cartier for regular forms once regular forms are migrated.'''
-        if not hasattr(self, "regular_form"):
-            raise PendingMigrationError("regular forms have not been migrated yet")
-        regular_form = self.regular_form()
+        '''Return a Cartier preimage of this form.
+
+        For a form represented as ``h dx`` in characteristic ``p``, the form
+        ``h^p x^(p-1) dx`` maps to ``h dx`` under Cartier.
+        '''
         characteristic = self.curve.characteristic
-        return (
-            regular_form.dx ** characteristic * self.curve.x ** (characteristic - 1) * self.curve.dx
-            + regular_form.dy ** characteristic * self.curve.y ** (characteristic - 1) * self.curve.y.diffn()
-        )
+        if characteristic == 0:
+            raise ValueError("inverse Cartier is only implemented in positive characteristic")
+        return (self.form ** characteristic) * (self.curve.x ** (characteristic - 1)) * self.curve.dx
 
     def valuation(self, place=0):
         '''Return the valuation at a place above infinity.'''

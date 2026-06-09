@@ -150,9 +150,7 @@ class SuperellipticCurve:
                     return getattr(module, class_name)
 
         expected = ", ".join(f"{module}.{class_name}" for module in module_names for class_name in class_names)
-        raise PendingMigrationError(
-            f"{description} has not been migrated yet; expected one of: {expected}"
-        )
+        raise PendingMigrationError(f"{description} could not be loaded; expected one of: {expected}")
 
     def _function_class(self):
         '''Return the migrated function class for this curve.'''
@@ -488,16 +486,13 @@ class SuperellipticCurve:
         return uniformizer
 
     def _load_holomorphic_combination_helpers(self):
-        '''Load Riemann-Roch helper functions once their module has been migrated.'''
-        try:
-            module = import_module("ascovers.as_covers.holomorphic_combinations")
-        except ModuleNotFoundError as error:
-            if error.name == "ascovers.as_covers":
-                raise PendingMigrationError(
-                    "Riemann-Roch spaces depend on holomorphic-combination helpers that are not migrated yet"
-                ) from error
-            raise
-        return module.holomorphic_combinations_fcts, module.holomorphic_combinations_forms
+        '''Load Riemann-Roch helper functions shared with AS covers.'''
+        from ascovers.as_covers.holomorphic import (
+            holomorphic_combinations_fcts,
+            holomorphic_combinations_forms,
+        )
+
+        return holomorphic_combinations_fcts, holomorphic_combinations_forms
 
     def riemann_roch_space(self, pole_orders, threshold=8):
         '''Find functions with bounded pole orders at the places above infinity.'''

@@ -2,4 +2,4 @@
 
 
 class PendingMigrationError(NotImplementedError):
-    '''Raised when a method depends on a legacy component that is not migrated yet.'''
+    '''Raised when an expected migrated component cannot be loaded.'''

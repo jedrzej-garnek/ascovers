@@ -1,3 +1,8 @@
 old/
 *.Identifier
 .agents/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.codex/
+*.pyc

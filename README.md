@@ -9,6 +9,7 @@ kept in `old/` while the package is rewritten module by module.
 ## Documentation
 
 - [Superelliptic curves](docs/superelliptic.md)
+- [Artin-Schreier type covers](docs/as_covers.md)
 
 ## Quick Start
 
@@ -25,6 +26,15 @@ x = R.gen()
 C = SuperellipticCurve(x**5 + x, 4)
 print(C.genus())
 print(C.holomorphic_differentials_basis())
+```
+
+Build an elementary Artin-Schreier cover from quotient functions:
+
+```python
+from ascovers import elementary_cover
+
+Y = elementary_cover([C.x], prec=60)
+print(Y.z[0]**7 - Y.z[0] == Y.x)
 ```
 
 ## Development
@@ -45,3 +55,7 @@ function and form modules define `SuperellipticFunction`,
 `SuperellipticForm`, and the legacy aliases `superelliptic_function` and
 `superelliptic_form`.  Cech-de Rham cocycles are represented by
 `SuperellipticDeRhamCocycle`, with legacy alias `superelliptic_cech`.
+Artin-Schreier type covers are available through `ArtinSchreierCover`,
+`ArtinSchreierFunction`, `ArtinSchreierForm`, and
+`ArtinSchreierDeRhamCocycle`, with legacy aliases `as_cover`, `as_function`,
+`as_form`, and `as_cech`.

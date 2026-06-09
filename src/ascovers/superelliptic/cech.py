@@ -2,7 +2,7 @@
 
 from sage.all import vector
 
-from ascovers.superelliptic.exceptions import PendingMigrationError
+from ascovers.superelliptic.decomposition import decomposition_g0_g8
 from ascovers.superelliptic.form import SuperellipticForm
 from ascovers.superelliptic.function import SuperellipticFunction
 
@@ -95,13 +95,7 @@ class SuperellipticDeRhamCocycle:
         )
 
     def coordinates(self, basis=0):
-        '''Return coordinates in the standard de Rham basis when currently supported.
-
-        General Cech coordinate reduction requires the ``decomposition_g0_g8``
-        helper, which has not been migrated yet.  Pure holomorphic cocycles,
-        pure structure-sheaf cocycles, and exact matches with a supplied
-        de Rham basis are handled directly.
-        '''
+        '''Return coordinates in the standard de Rham basis.'''
         genus = int(self.curve.genus())
         base_field = self.curve.base_ring
         if basis == 0:
@@ -133,9 +127,19 @@ class SuperellipticDeRhamCocycle:
             coordinates += list(self.f.coordinates(basis=basis_holomorphic))
             return vector(base_field, coordinates)
 
-        raise PendingMigrationError(
-            "coordinates of a general Cech-de Rham cocycle require decomposition_g0_g8"
+        structure_coordinates = self.f.coordinates(basis=basis_holomorphic)
+        reduced = self
+        for index in range(genus):
+            reduced -= structure_coordinates[index] * basis_de_rham[index + genus]
+
+        affine_part, _infinity_part, _cohomology_part = decomposition_g0_g8(reduced.f)
+        holomorphic_cocycle = SuperellipticDeRhamCocycle(
+            self.curve,
+            reduced.omega0 - affine_part.diffn(),
+            zero_function,
         )
+        coordinates = [base_field.zero()] * genus + list(structure_coordinates)
+        return vector(base_field, coordinates) + holomorphic_cocycle.coordinates(basis=basis)
 
     def is_cocycle(self):
         '''Return True if the stored triple satisfies the regularity checks.'''
