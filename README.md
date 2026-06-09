@@ -6,6 +6,27 @@
 The migrated package lives under `src/ascovers`.  The legacy Sage scripts are
 kept in `old/` while the package is rewritten module by module.
 
+## Documentation
+
+- [Superelliptic curves](docs/superelliptic.md)
+
+## Quick Start
+
+Use the package from a SageMath Python environment:
+
+```python
+from sage.all import GF, PolynomialRing
+from ascovers import SuperellipticCurve
+
+F = GF(7)
+R = PolynomialRing(F, "x")
+x = R.gen()
+
+C = SuperellipticCurve(x**5 + x, 4)
+print(C.genus())
+print(C.holomorphic_differentials_basis())
+```
+
 ## Development
 
 Run the tests from a SageMath Python environment:
