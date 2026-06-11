@@ -550,13 +550,14 @@ class ArtinSchreierCover:
         span = vector_space.subspace([])
         result = []
         x_pole_power = 0
+        from itertools import product
         while len(result) < self.genus():
             for y_denominator_power in range(0, quotient_exponent):
                 for z_exponents in product(*z_exponent_ranges):
                     expression = prod(
                         z_coordinates[index] ** int(z_exponents[index])
                         for index in range(self.height)
-                    ) / x_coordinate ** x_pole_power / y_coordinate ** y_denominator_power
+                    ) / x_coordinate ** x_pole_power * y_coordinate ** y_denominator_power
                     function = self.function(function_field(expression))
                     pairings = [omega.serre_duality_pairing(function) for omega in holo_basis]
                     vector_pairing = vector(self.base_ring, pairings)
