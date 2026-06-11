@@ -106,12 +106,13 @@ class ArtinSchreierFunction:
             prec = self.curve.prec
         series_ring = LaurentSeriesRing(self.curve.base_ring, "t", default_prec=int(prec))
         function_field, _polynomial_ring, x_coordinate, y_coordinate, z_coordinates = self.curve.fct_field
+        place_key = int(place) if isinstance(place, (int, Integer)) else place
         substitutions = {
-            x_coordinate: series_ring(self.curve.x_series[int(place)]),
-            y_coordinate: series_ring(self.curve.y_series[int(place)]),
+            x_coordinate: series_ring(self.curve.x_series[place_key]),
+            y_coordinate: series_ring(self.curve.y_series[place_key]),
         }
         substitutions.update(
-            {z_coordinates[index]: series_ring(self.curve.z_series[int(place)][index]) for index in range(self.curve.height)}
+            {z_coordinates[index]: series_ring(self.curve.z_series[place_key][index]) for index in range(self.curve.height)}
         )
         return series_ring(function_field(self.function).substitute(substitutions))
 

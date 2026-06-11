@@ -159,6 +159,24 @@ class ArtinSchreierCoverTest(unittest.TestCase):
         self.assertIsInstance(cocycle, ArtinSchreierDeRhamCocycle)
         self.assertEqual(cocycle.omega8, 0 * cover.dx)
 
+    def test_de_rham_basis_smoke(self):
+        '''Check that the AS de Rham basis construction terminates on a small cover.'''
+        cover = self.rational_elementary_cover()
+        holomorphic_basis = cover.holomorphic_differentials_basis(threshold=5)
+        cohomology_basis = cover.cohomology_of_structure_sheaf_basis(
+            holo_basis=holomorphic_basis,
+            threshold=5,
+        )
+        de_rham_basis = cover.de_rham_basis(
+            holo_basis=holomorphic_basis,
+            cohomology_basis=cohomology_basis,
+            threshold=5,
+        )
+
+        self.assertEqual(len(de_rham_basis), 2 * cover.genus())
+        for cocycle in de_rham_basis:
+            self.assertIsInstance(cocycle, ArtinSchreierDeRhamCocycle)
+
     def test_group_action_matrices_and_polydifferentials(self):
         '''Check migrated group-action matrix and polydifferential helpers.'''
         cover = self.rational_elementary_cover()

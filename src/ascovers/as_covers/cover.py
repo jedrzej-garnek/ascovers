@@ -257,10 +257,14 @@ class ArtinSchreierCover:
         for element in self.group.elts:
             fixed = True
             for index in range(self.height):
+                if self.jumps[place][index] != 0:
+                    continue
+                translated = self.z[index].group_action(element)
+                differential_difference = translated.diffn() - self.z[index].diffn()
+                function_difference = translated - self.z[index]
                 if (
-                    self.jumps[place][index] == 0
-                    and self.z[index].group_action(element).diffn() - self.z[index].diffn() == 0 * self.dx
-                    and self.z[index].group_action(element) != self.z[index]
+                    differential_difference.expansion_at_infty(place=place) == 0
+                    and function_difference.expansion_at_infty(place=place) != 0
                 ):
                     fixed = False
             if fixed:
@@ -303,9 +307,9 @@ class ArtinSchreierCover:
                     candidate_items.append((form, form.expansion_at_infty(place=self.branch_points[0])))
 
         forms = holomorphic_combinations(candidate_items)
-        for place in self.branch_points:
+        for place in range(int(self.nb_of_pts_at_infty)):
             for group_element in self.fiber(place=place):
-                if place != self.branch_points[0] or group_element != self.group.one:
+                if place != 0 or group_element != self.group.one:
                     forms = [
                         (form, form.group_action(group_element).expansion_at_infty(place=place))
                         for form in forms
@@ -578,7 +582,8 @@ class ArtinSchreierCover:
         quotient_exponent = int(self.quotient.exponent)
         quotient_degree = int(self.quotient.polynomial.degree())
         z_exponent_ranges = [range(int(self.characteristic)) for _index in range(self.height)]
-        candidates = [(function.diffn(), function.diffn().expansion_at_infty())]
+        function_differential = function.diffn()
+        candidates = [(function_differential, function_differential.expansion_at_infty())]
         for x_power in range(0, int(threshold) * quotient_degree):
             for y_denominator_power in range(0, quotient_exponent):
                 for z_exponents in product(*z_exponent_ranges):
@@ -591,9 +596,9 @@ class ArtinSchreierCover:
                     candidates.append((form, form.expansion_at_infty()))
         forms = holomorphic_combinations(candidates)
 
-        for place in self.branch_points:
+        for place in range(int(self.nb_of_pts_at_infty)):
             for group_element in self.fiber(place=place):
-                if place != self.branch_points[0] or group_element != self.group.one:
+                if place != 0 or group_element != self.group.one:
                     forms = [
                         (form, form.group_action(group_element).expansion_at_infty(place=place))
                         for form in forms
@@ -604,7 +609,7 @@ class ArtinSchreierCover:
             raise ValueError("increase threshold")
         for form in forms:
             for scalar in self.base_ring:
-                candidate = scalar * form + function.diffn()
+                candidate = scalar * form + function_differential
                 if candidate.is_regular_on_U0():
                     return candidate
         raise ValueError("could not find a de Rham lift")

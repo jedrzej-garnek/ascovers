@@ -1,6 +1,6 @@
 '''Differential forms on Artin-Schreier type covers.'''
 
-from sage.all import FractionField, LCM, LaurentSeriesRing, PolynomialRing, prod
+from sage.all import FractionField, Integer, LCM, LaurentSeriesRing, PolynomialRing, prod
 
 from ascovers.as_covers.reduction import artin_schreier_reduction
 from ascovers.linear_algebra import linear_representation_polynomials
@@ -67,8 +67,9 @@ class ArtinSchreierForm:
         if prec is None:
             prec = self.curve.prec
         series_ring = LaurentSeriesRing(self.curve.base_ring, "t", default_prec=int(prec))
-        coefficient = self.form.expansion_at_infty(place=place, prec=prec)
-        return series_ring(coefficient) * series_ring(self.curve.dx_series[int(place)])
+        place_key = int(place) if isinstance(place, (int, Integer)) else place
+        coefficient = self.form.expansion_at_infty(place=place_key, prec=prec)
+        return series_ring(coefficient) * series_ring(self.curve.dx_series[place_key])
 
     def expansion(self, point=0, prec=None):
         '''Return a Laurent expansion at a currently supported branch point.'''
