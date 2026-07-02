@@ -9,6 +9,7 @@ from ascovers.as_covers.group import (
     heisenberg_group,
     hypoelementary_group,
     quaternion_group,
+    A4_group,
 )
 
 
@@ -345,6 +346,49 @@ def d8_cover(functions, prec=10):
         prec=prec,
     )
 
+def A4_template():
+    '''Return the A4 template.'''
+    cover_group = A4_group()
+    F = GF(4)
+    zeta = F.gens()[0]
+    def equations(z, f, _x, _y):
+        return [f[0], zeta*f[0]]
+
+    def actions(z, _f, x, y):
+        return [
+            [z[0], z[1] + 1, x, y],
+            [z[1], z[1] + z[0], zeta*x, zeta*y],
+        ]
+
+    return CoverTemplate(2, F, cover_group, equations, actions)
+
+
+def A4_cover(function, prec=10):
+    '''Return the A4 cover defined by quotient functions.'''
+    from ascovers.as_covers.cover import ArtinSchreierCover
+    polynomial = function.function.numerator()
+    F = polynomial.parent().base_ring()
+    x, y = polynomial.parent().gens()
+    Rxy = PolynomialRing(F, 'x, y')
+    Rx = PolynomialRing(F, 'x')
+    polynomial = Rx(polynomial(x=x, y = 1))
+    zeta = F.gens()[0] #this fails, if F != GF(4)
+
+    if sum([coeff for index, coeff in enumerate(list(polynomial)) if index%3 == 0 ]) != 0:
+        raise ValueError("The polynomial needs to satisfy tr(f) = 0")
+
+    quotient = function.curve
+
+    if quotient.exponent != 1 or quotient.polynomial.degree() != 1:
+        raise ValueError("Only covers of P1 are implemented")
+
+    return ArtinSchreierCover(
+        quotient,
+        A4_template(),
+        [function, zeta * function],
+        branch_points=[],
+        prec=prec,
+    )
 
 template = CoverTemplate
 witt_pol = witt_polynomial

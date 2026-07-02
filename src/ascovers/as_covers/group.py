@@ -279,6 +279,74 @@ def dihedral_group(characteristic, exponent):
         generators=[(1, 0), (0, 1)],
     )
 
+def A4_group():
+    '''Return the alternating group A_4.
+
+    Presentation:
+        <sigma, rho | sigma^2 = rho^3 = (sigma rho)^3 = 1>
+
+    Elements are represented as triples (i, j, k), corresponding to
+        sigma^i rho^j (sigma rho)^k.
+    '''
+    def compose(first, second):
+        # Permutations are tuples, with value[i] = image of i.
+        # This returns first ∘ second.
+        return tuple(first[i] for i in second)
+
+    def invert_perm(value):
+        inverse_value = [0] * len(value)
+        for index, image in enumerate(value):
+            inverse_value[image] = index
+        return tuple(inverse_value)
+
+    identity_perm = (0, 1, 2, 3)
+
+    sigma_perm = (1, 0, 3, 2)  # (1 2)(3 4)
+    rho_perm = (1, 2, 0, 3)    # (1 2 3)
+
+    sigma_rho_perm = compose(sigma_perm, rho_perm)
+
+    def power(value, exponent):
+        result = identity_perm
+        for _ in range(exponent):
+            result = compose(result, value)
+        return result
+
+    def to_perm(value):
+        i, j, k = value
+        return compose(
+            compose(power(sigma_perm, i), power(rho_perm, j)),
+            power(sigma_rho_perm, k),
+        )
+
+    elements = [
+        (i, j, k)
+        for i in range(2)
+        for j in range(3)
+        for k in range(2)
+    ]
+
+    perm_to_element = {
+        to_perm(element): element
+        for element in elements
+    }
+
+    return FiniteGroup(
+        name="Alternating group A_4",
+        short_name="A_4",
+        elements=elements,
+        identity=(0, 0, 0),
+        multiply=lambda first, second: perm_to_element[
+            compose(to_perm(first), to_perm(second))
+        ],
+        inverse=lambda value: perm_to_element[
+            invert_perm(to_perm(value))
+        ],
+        generators=[
+            (1, 0, 0),  # sigma
+            (0, 1, 0),  # rho
+        ],
+    )
 
 group = FiniteGroup
 group_elt = FiniteGroupElement

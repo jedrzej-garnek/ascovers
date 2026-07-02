@@ -32,6 +32,7 @@ from ascovers.as_covers.group import (
     hypoelementary_group,
     quaternion_gp,
     quaternion_group,
+    A4_group,
 )
 from ascovers.as_covers.reduction import artin_schreier_reduction, as_reduction
 from ascovers.as_covers.matrices import (
@@ -81,6 +82,8 @@ from ascovers.as_covers.template import (
     witt_sum,
     witt_sum_mod_p,
     witt_template,
+    A4_cover,
+    A4_template
 )
 from ascovers.as_covers.transform import artin_schreier_transform, as_transform
 
@@ -96,6 +99,9 @@ __all__ = [
     "D8_cover",
     "D8_template",
     "FiniteGroup",
+    "A4_cover",
+    "A4_template",
+    "A4_group",
     "FiniteGroupElement",
     "SymmetricProductOfForms",
     "are_forms_linearly_dependent",
