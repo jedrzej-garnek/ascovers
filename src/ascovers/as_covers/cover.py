@@ -613,7 +613,7 @@ class ArtinSchreierCover:
                 result.append(element)
         return result
 
-    def ramification_jumps(self, place=0, quasiuniformizer=0, threshold=20):
+    def ramification_jumps(self, place=0, quasiuniformizer=0):
         '''Return lower ramification jumps at a point above infinity.'''
         stabilizer = self.stabilizer(place=place)
         if isinstance(quasiuniformizer, (int, Integer)):
@@ -637,12 +637,11 @@ class ArtinSchreierCover:
             index += 1
         return result
 
-    def upper_ramification_jumps(self, place=0, quasiuniformizer=0, threshold=20):
+    def upper_ramification_jumps(self, place=0, quasiuniformizer=0):
         '''Return upper ramification jumps at a point above infinity.'''
         lower_jumps = self.ramification_jumps(
             place=place,
-            quasiuniformizer=quasiuniformizer,
-            threshold=threshold,
+            quasiuniformizer=quasiuniformizer
         )
         if not lower_jumps:
             return []
