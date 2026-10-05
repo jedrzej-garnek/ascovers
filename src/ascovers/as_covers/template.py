@@ -346,11 +346,9 @@ def d8_cover(functions, prec=10):
         prec=prec,
     )
 
-def A4_template():
+def A4_template(F, zeta):
     '''Return the A4 template.'''
     cover_group = A4_group()
-    F = GF(4)
-    zeta = F.gens()[0]
     def equations(z, f, _x, _y):
         return [f[0], zeta*f[0]]
 
@@ -363,8 +361,8 @@ def A4_template():
     return CoverTemplate(2, F, cover_group, equations, actions)
 
 
-def A4_cover(function, prec=10):
-    '''Return the A4 cover defined by quotient functions.'''
+def A4_cover(function, zeta, prec=10):
+    '''Return the A4 cover defined by quotient functions. Zeta is 3rd root of unity.'''
     from ascovers.as_covers.cover import ArtinSchreierCover
     polynomial = function.function.numerator()
     F = polynomial.parent().base_ring()
@@ -372,7 +370,6 @@ def A4_cover(function, prec=10):
     Rxy = PolynomialRing(F, 'x, y')
     Rx = PolynomialRing(F, 'x')
     polynomial = Rx(polynomial(x=x, y = 1))
-    zeta = F.gens()[0] #this fails, if F != GF(4)
 
     if sum([coeff for index, coeff in enumerate(list(polynomial)) if index%3 == 0 ]) != 0:
         raise ValueError("The polynomial needs to satisfy tr(f) = 0")
@@ -384,7 +381,7 @@ def A4_cover(function, prec=10):
 
     return ArtinSchreierCover(
         quotient,
-        A4_template(),
+        A4_template(F, zeta),
         [function, zeta * function],
         branch_points=[],
         prec=prec,

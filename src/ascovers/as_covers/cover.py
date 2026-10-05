@@ -414,67 +414,49 @@ class ArtinSchreierCover:
                     return first ** first_exponent * second ** second_exponent
         raise ValueError("increase the pole-search thresholds")
 
-    def quasiuniformizer(self, place=0, threshold=10, auxiliary1=0, auxiliary2=0, **legacy_keywords):
-        '''Return a function whose valuation is coprime to ``p``.
+    def uniformizer(self, place = 0):
+        '''Return uniformizer of curve self at place-th place at infinity.'''
+        qu = self.quasiuniformizer(place=place)
+        A = qu.valuation(place=place)
+        B = self.x.valuation(place=place)
+        d, a, b = xgcd(A, B)
+        return qu**a * self.x**b
 
-        ``auxiliary2`` is accepted for compatibility with the legacy signature;
-        the old implementation did not use it in the final algorithm.
-        '''
-        if "auxilliary1" in legacy_keywords:
-            auxiliary1 = legacy_keywords.pop("auxilliary1")
-        if "auxilliary2" in legacy_keywords:
-            auxiliary2 = legacy_keywords.pop("auxilliary2")
-        if "auxiliary2" in legacy_keywords:
-            auxiliary2 = legacy_keywords.pop("auxiliary2")
-        if legacy_keywords:
-            unknown = ", ".join(sorted(legacy_keywords))
-            raise TypeError(f"unknown keyword argument(s): {unknown}")
-
-        series_ring = LaurentSeriesRing(self.base_ring, "t", default_prec=self.prec)
-        characteristic = self.characteristic
-        if self.height == 1:
-            return self.z[0]
-
-        def difference_of_powers(first, second):
-            first_series = series_ring(first.expansion_at_infty(place=place))
-            second_series = series_ring(second.expansion_at_infty(place=place))
-            first_valuation = first_series.valuation()
-            second_valuation = second_series.valuation()
-            common_divisor = gcd(first_valuation, second_valuation)
-            if common_divisor:
-                first_reduced = first_valuation // common_divisor
-                second_reduced = second_valuation // common_divisor
-            else:
-                first_reduced, second_reduced = 1, 1
-            if first_reduced < 0:
-                first_reduced, second_reduced = -first_reduced, -second_reduced
-            leading_ratio = list(first_series)[0] / list(second_series)[0]
-            return first ** second_reduced - (leading_ratio * second) ** second_reduced
-
-        def quotient_of_powers(first, second):
-            first_series = series_ring(first.expansion_at_infty(place=place))
-            second_series = series_ring(second.expansion_at_infty(place=place))
-            first_valuation = first_series.valuation()
-            second_valuation = second_series.valuation()
-            common_divisor = gcd(first_valuation, second_valuation)
-            if common_divisor:
-                first_reduced = first_valuation // common_divisor
-                second_reduced = second_valuation // common_divisor
-            else:
-                first_reduced, second_reduced = 1, 1
-            leading_coefficient = list(first_series ** second_reduced / second_series ** first_reduced)[0]
-            return first ** second_reduced / second ** first_reduced - leading_coefficient * self.one
-
-        if auxiliary1 == 0:
-            auxiliary1 = self.z[-1]
-
-        candidate = quotient_of_powers(self.z[-2], auxiliary1)
-        while candidate.valuation(place=place) % characteristic == 0:
-            if randrange(2) == 0:
-                candidate = difference_of_powers(auxiliary1, candidate)
-            else:
-                candidate = quotient_of_powers(auxiliary1, candidate)
-        return candidate
+    def quasiuniformizer(self, place = 0):
+        '''Return an element with valuation coprime to p.'''
+        p = self.characteristic
+        n = self.height
+        F = self.base_ring
+        Rt = LaurentSeriesRing(F, "t", default_prec=self.prec)
+        quasiuniformizers = [self.z[0]] # quasiuniformizers in the tower
+        for i in range(1, n): # we compute the ith quasiuniformizer in the tower
+            ramification_index = p**(sum(jump > 0 for jump in self.jumps[place][:i-1]))
+            ramification_index_quotient = (-self.x.valuation(place=place))/ramification_index
+            val_of_x = - ramification_index
+            previous_quasiuniformizer = quasiuniformizers[i-1]
+            A = - self.jumps[place][i-1]
+            B = val_of_x
+            d, a, b = xgcd(A, B)
+            previous_uniformizer = (previous_quasiuniformizer)**(a) * (self.x)**(b)
+            print("prev unif", previous_uniformizer, previous_uniformizer.valuation())
+            f1 = self.one * self.functions[i]
+            z1 = self.z[i]
+            coeff_previous_uniformizer = list(previous_uniformizer.expansion_at_infty(place=place))[0]
+            f1_val = f1.valuation(place=place)
+            while f1_val != -self.jumps[place][i] or f1_val < 0:
+                v2 = f1_val//(ramification_index_quotient)
+                print(v2)
+                coeff = list(f1.expansion_at_infty(place=place))[0]
+                coeff2 = (F(coeff).nth_root(p))/(coeff_previous_uniformizer**(v2))
+                print(f1, f1.valuation(), previous_uniformizer.valuation(), (previous_uniformizer**(v2)).valuation())
+                h = coeff2 * previous_uniformizer**v2
+                print("!", f1.valuation(), (f1 - h**p + h).valuation(), f1, h, f1 - h**p + h)
+                f1 = f1 - h**p + h
+                z1 = z1 - h**(v2)
+                f1_val = f1.valuation(place=place)
+            quasiuniformizers += [z1]
+        return quasiuniformizers[-1]    
+        
 
     def ith_ramification_group(self, index, place=0, quasiuniformizer=0, threshold=20):
         '''Return the ``index``-th lower ramification group at a point above infinity.'''
