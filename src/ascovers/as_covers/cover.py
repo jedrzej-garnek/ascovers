@@ -408,55 +408,230 @@ class ArtinSchreierCover:
         d, a, b = xgcd(A, B)
         return qu**a * self.x**b
 
-    def quasiuniformizer(self, place = 0):
-        '''Return an element with valuation coprime to p.'''
+    def quasiuniformizer(self, place=0):
+        """Return an element with valuation coprime to p."""
+
         p = self.characteristic
         n = self.height
         F = self.base_ring
-        Rt = LaurentSeriesRing(F, "t", default_prec=self.prec)
-        quasiuniformizers = [self.x] # quasiuniformizers in the tower
-        for i in range(0, n): # we compute the ith quasiuniformizer in the tower
-            print('\n \n poziom', i)
-            ramification_index = p**(sum(jump > 0 for jump in self.jumps[place][:i-1])) if i > 0 else 1
-            ramification_index_quotient = (-self.x.valuation(place=place))/ramification_index
-            #print(ramification_index, ramification_index_quotient)
-            val_of_x = self.x.valuation(place=place)
-            previous_quasiuniformizer = quasiuniformizers[-1]
-            A = previous_quasiuniformizer.valuation(place=place)
-            B = self.x.valuation(place=place)
+
+        x = self.x
+
+        # Trzymamy zarówno funkcję symboliczną, jak i jej szereg.
+        x_series = x.expansion_at_infty(place=place)
+
+        quasiuniformizers = [x]
+        quasiuniformizer_series = [x_series]
+
+        def small_bezout_solution(A, B, target):
+            """
+            Find alpha, beta such that
+
+                alpha*A + beta*B = target,
+
+            preferring small |alpha|, since the previous
+            quasiuniformizer is usually much more complicated than x.
+            """
+
             d, a, b = xgcd(A, B)
-            previous_uniformizer = (previous_quasiuniformizer)**(a) * (self.x)**(b)
-            print("prev unif valuation:", previous_uniformizer.valuation())
-            f1 = self.one * self.rhs[i]
-            print("f1", f1.valuation(), f1)
+
+            if target % d != 0:
+                return None
+
+            k = target // d
+
+            alpha0 = a * k
+            beta0 = b * k
+
+            # All solutions:
+            #
+            # alpha = alpha0 + (B/d)*t
+            # beta  = beta0  - (A/d)*t
+
+            da = B // d
+            db = -A // d
+
+            if da != 0:
+                # Choose t close to the value making alpha zero.
+                t0 = (-alpha0) // da
+                candidates = range(t0 - 2, t0 + 3)
+
+            elif db != 0:
+                t0 = (-beta0) // db
+                candidates = range(t0 - 2, t0 + 3)
+
+            else:
+                candidates = [0]
+
+            solutions = []
+
+            for t in candidates:
+                alpha = alpha0 + da * t
+                beta = beta0 + db * t
+
+                # First minimize the exponent of the complicated q,
+                # then the exponent of x.
+                score = (abs(alpha), abs(beta))
+
+                solutions.append((score, alpha, beta))
+
+            _, alpha, beta = min(solutions)
+
+            return alpha, beta
+
+        for i in range(n):
+
+            print("\n\npoziom", i)
+
+            previous_quasiuniformizer = quasiuniformizers[-1]
+            q_series = quasiuniformizer_series[-1]
+
+            A = q_series.valuation()
+            B = x_series.valuation()
+
+            coeff_q = q_series[A]
+            coeff_x = x_series[B]
+
+            print("v(q) =", A)
+            print("v(x) =", B)
+
+            # RHS of z_i^p - z_i = f1
+            f1_series = (self.one*self.rhs[i]).expansion_at_infty(place=place)
+
             z1 = self.z[i]
-            coeff_previous_uniformizer = list(previous_uniformizer.expansion_at_infty(place=place))[0]
-            val_previous_uniformizer = previous_uniformizer.valuation(place=place)
-            f1_val = f1.valuation(place=place)
-            f1_series = f1.expansion_at_infty(place=place)
-            previous_uniformizer_series = previous_uniformizer.expansion_at_infty(place=place)
-            print("aaa", -self.jumps[place][i], ramification_index)
+            z1_series = z1.expansion_at_infty(place=place)
+
             steps = 0
-            while f1_val % (p*val_previous_uniformizer) == 0 and f1_val < 0:
-                print("krok", steps)
-                v2 = f1_val//(p*val_previous_uniformizer)
-                print("v2", v2)
-                coeff = list(f1.expansion_at_infty(place=place))[0]
-                coeff2 = (F(coeff).nth_root(p))/(coeff_previous_uniformizer**(v2))
-                print("f1 valuation, prev uni, h", f1.valuation(), previous_uniformizer.valuation(), "previous uniformizer:", previous_uniformizer)
-                print("previous_uniformizer val", previous_uniformizer.valuation())
-                h = coeff2 * previous_uniformizer**v2
-                h_series = coeff2 * previous_uniformizer_series**v2
-                print("h:", h, "f1:", f1)
-                #print("!", f1.valuation(), (f1 - h**p + h).valuation(), f1, h, f1 - h**p + h)
-                f1 = f1 - h**p + h
-                f1_series = f1_series - h_series**p + h_series
-                z1 = z1 - h
+
+            while True:
+
                 f1_val = f1_series.valuation()
-                steps +=1
-            quasiuniformizers += [z1]
-            print("ostateczne f1:", f1)
-        return quasiuniformizers[-1]    
+
+                print("krok", steps, "v(f1) =", f1_val)
+
+                if f1_val >= 0:
+                    break
+
+                # To cancel the leading term using h^p,
+                # v(f1) must be divisible by p.
+                if f1_val % p != 0:
+                    break
+
+                target_h_val = f1_val // p
+
+                solution = small_bezout_solution(
+                    A,
+                    B,
+                    target_h_val
+                )
+
+                if solution is None:
+                    # No q^alpha x^beta has the required valuation.
+                    break
+
+                alpha, beta = solution
+
+                print(
+                    "target v(h) =", target_h_val,
+                    "alpha =", alpha,
+                    "beta =", beta
+                )
+
+                # Leading coefficient of q^alpha x^beta
+                coeff_h0 = (
+                    coeff_q**alpha *
+                    coeff_x**beta
+                )
+
+                # Leading coefficient of f1
+                coeff_f = f1_series[f1_val]
+
+                # Want:
+                #
+                #   lc(h)^p = lc(f1).
+                #
+                # If h = c * q^alpha * x^beta, then
+                #
+                #   lc(h) = c * coeff_h0.
+                #
+                coeff2 = (
+                    F(coeff_f).nth_root(p) /
+                    coeff_h0
+                )
+
+                # Symbolic h
+                h = (
+                    coeff2 *
+                    previous_quasiuniformizer**alpha *
+                    x**beta
+                )
+
+                # Laurent-series h
+                h_series = (
+                    coeff2 *
+                    q_series**alpha *
+                    x_series**beta
+                )
+
+                print(
+                    "v(h) =", h_series.valuation(),
+                    "v(h^p) =", (h_series**p).valuation()
+                )
+
+                # Sanity check
+                if (h_series**p).valuation() != f1_val:
+                    raise RuntimeError(
+                        "Wrong valuation of h^p: "
+                        f"{(h_series**p).valuation()} != {f1_val}"
+                    )
+
+                old_val = f1_val
+
+                # Artin-Schreier transformation
+                f1_series = (
+                    f1_series -
+                    h_series**p +
+                    h_series
+                )
+
+                z1 = z1 - h
+                z1_series = z1_series - h_series
+
+                new_val = f1_series.valuation()
+
+                print(
+                    "v(f1):",
+                    old_val,
+                    "->",
+                    new_val
+                )
+
+                # If we supposedly killed the leading coefficient
+                # but the valuation did not increase, something is
+                # wrong with coeff2.
+                if new_val <= old_val:
+                    raise RuntimeError(
+                        "Leading term was not cancelled: "
+                        f"valuation changed from {old_val} "
+                        f"to {new_val}"
+                    )
+
+                steps += 1
+
+            quasiuniformizers.append(z1)
+            quasiuniformizer_series.append(z1_series)
+
+            print(
+                "final v(f1) =",
+                f1_series.valuation()
+            )
+
+            print(
+                "quasiuniformizer valuation =",
+                z1_series.valuation()
+            )
+
+        return quasiuniformizers[-1]
         
 
     def ith_ramification_group(self, index, place=0, quasiuniformizer=0):
