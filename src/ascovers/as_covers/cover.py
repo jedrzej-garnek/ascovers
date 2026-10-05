@@ -409,7 +409,7 @@ class ArtinSchreierCover:
         return qu**a * self.x**b
 
     def quasiuniformizer(self, place=0):
-        """Return an element with valuation coprime to p."""
+        """Return an element with valuation coprime to p. """
 
         p = self.characteristic
         n = self.height
@@ -480,9 +480,6 @@ class ArtinSchreierCover:
             return alpha, beta
 
         for i in range(n):
-
-            print("\n\npoziom", i)
-
             previous_quasiuniformizer = quasiuniformizers[-1]
             q_series = quasiuniformizer_series[-1]
 
@@ -491,9 +488,6 @@ class ArtinSchreierCover:
 
             coeff_q = q_series[A]
             coeff_x = x_series[B]
-
-            print("v(q) =", A)
-            print("v(x) =", B)
 
             # RHS of z_i^p - z_i = f1
             f1_series = (self.one*self.rhs[i]).expansion_at_infty(place=place)
@@ -506,8 +500,6 @@ class ArtinSchreierCover:
             while True:
 
                 f1_val = f1_series.valuation()
-
-                print("krok", steps, "v(f1) =", f1_val)
 
                 if f1_val >= 0:
                     break
@@ -530,12 +522,6 @@ class ArtinSchreierCover:
                     break
 
                 alpha, beta = solution
-
-                print(
-                    "target v(h) =", target_h_val,
-                    "alpha =", alpha,
-                    "beta =", beta
-                )
 
                 # Leading coefficient of q^alpha x^beta
                 coeff_h0 = (
@@ -573,11 +559,6 @@ class ArtinSchreierCover:
                     x_series**beta
                 )
 
-                print(
-                    "v(h) =", h_series.valuation(),
-                    "v(h^p) =", (h_series**p).valuation()
-                )
-
                 # Sanity check
                 if (h_series**p).valuation() != f1_val:
                     raise RuntimeError(
@@ -599,13 +580,6 @@ class ArtinSchreierCover:
 
                 new_val = f1_series.valuation()
 
-                print(
-                    "v(f1):",
-                    old_val,
-                    "->",
-                    new_val
-                )
-
                 # If we supposedly killed the leading coefficient
                 # but the valuation did not increase, something is
                 # wrong with coeff2.
@@ -620,16 +594,6 @@ class ArtinSchreierCover:
 
             quasiuniformizers.append(z1)
             quasiuniformizer_series.append(z1_series)
-
-            print(
-                "final v(f1) =",
-                f1_series.valuation()
-            )
-
-            print(
-                "quasiuniformizer valuation =",
-                z1_series.valuation()
-            )
 
         return quasiuniformizers[-1]
         
