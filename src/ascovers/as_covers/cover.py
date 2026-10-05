@@ -400,20 +400,6 @@ class ArtinSchreierCover:
             if function.trace().function != 0
         ]
 
-    def uniformizer(self, place=0, threshold1=10, threshold2=10):
-        '''Return a uniformizer at a selected point above infinity.'''
-        bounded_functions = self.at_most_poles(threshold1, threshold=threshold2)
-        simple_functions = self.z + [self.x, self.y]
-        for first in bounded_functions:
-            for second in simple_functions:
-                divisor, first_exponent, second_exponent = xgcd(
-                    first.valuation(place),
-                    second.valuation(place),
-                )
-                if divisor == 1:
-                    return first ** first_exponent * second ** second_exponent
-        raise ValueError("increase the pole-search thresholds")
-
     def uniformizer(self, place = 0):
         '''Return uniformizer of curve self at place-th place at infinity.'''
         qu = self.quasiuniformizer(place=place)
@@ -428,40 +414,55 @@ class ArtinSchreierCover:
         n = self.height
         F = self.base_ring
         Rt = LaurentSeriesRing(F, "t", default_prec=self.prec)
-        quasiuniformizers = [self.z[0]] # quasiuniformizers in the tower
-        for i in range(1, n): # we compute the ith quasiuniformizer in the tower
-            ramification_index = p**(sum(jump > 0 for jump in self.jumps[place][:i-1]))
+        quasiuniformizers = [self.x] # quasiuniformizers in the tower
+        for i in range(0, n): # we compute the ith quasiuniformizer in the tower
+            print('\n \n poziom', i)
+            ramification_index = p**(sum(jump > 0 for jump in self.jumps[place][:i-1])) if i > 0 else 1
             ramification_index_quotient = (-self.x.valuation(place=place))/ramification_index
-            val_of_x = - ramification_index
-            previous_quasiuniformizer = quasiuniformizers[i-1]
-            A = - self.jumps[place][i-1]
-            B = val_of_x
+            #print(ramification_index, ramification_index_quotient)
+            val_of_x = self.x.valuation(place=place)
+            previous_quasiuniformizer = quasiuniformizers[-1]
+            A = previous_quasiuniformizer.valuation(place=place)
+            B = self.x.valuation(place=place)
             d, a, b = xgcd(A, B)
             previous_uniformizer = (previous_quasiuniformizer)**(a) * (self.x)**(b)
-            print("prev unif", previous_uniformizer, previous_uniformizer.valuation())
-            f1 = self.one * self.functions[i]
+            print("prev unif valuation:", previous_uniformizer.valuation())
+            f1 = self.one * self.rhs[i]
+            print("f1", f1.valuation(), f1)
             z1 = self.z[i]
             coeff_previous_uniformizer = list(previous_uniformizer.expansion_at_infty(place=place))[0]
+            val_previous_uniformizer = previous_uniformizer.valuation(place=place)
             f1_val = f1.valuation(place=place)
-            while f1_val != -self.jumps[place][i] or f1_val < 0:
-                v2 = f1_val//(ramification_index_quotient)
-                print(v2)
+            f1_series = f1.expansion_at_infty(place=place)
+            previous_uniformizer_series = previous_uniformizer.expansion_at_infty(place=place)
+            print("aaa", -self.jumps[place][i], ramification_index)
+            steps = 0
+            while f1_val % (p*val_previous_uniformizer) == 0 and f1_val < 0:
+                print("krok", steps)
+                v2 = f1_val//(p*val_previous_uniformizer)
+                print("v2", v2)
                 coeff = list(f1.expansion_at_infty(place=place))[0]
                 coeff2 = (F(coeff).nth_root(p))/(coeff_previous_uniformizer**(v2))
-                print(f1, f1.valuation(), previous_uniformizer.valuation(), (previous_uniformizer**(v2)).valuation())
+                print("f1 valuation, prev uni, h", f1.valuation(), previous_uniformizer.valuation(), "previous uniformizer:", previous_uniformizer)
+                print("previous_uniformizer val", previous_uniformizer.valuation())
                 h = coeff2 * previous_uniformizer**v2
-                print("!", f1.valuation(), (f1 - h**p + h).valuation(), f1, h, f1 - h**p + h)
+                h_series = coeff2 * previous_uniformizer_series**v2
+                print("h:", h, "f1:", f1)
+                #print("!", f1.valuation(), (f1 - h**p + h).valuation(), f1, h, f1 - h**p + h)
                 f1 = f1 - h**p + h
-                z1 = z1 - h**(v2)
-                f1_val = f1.valuation(place=place)
+                f1_series = f1_series - h_series**p + h_series
+                z1 = z1 - h
+                f1_val = f1_series.valuation()
+                steps +=1
             quasiuniformizers += [z1]
+            print("ostateczne f1:", f1)
         return quasiuniformizers[-1]    
         
 
-    def ith_ramification_group(self, index, place=0, quasiuniformizer=0, threshold=20):
+    def ith_ramification_group(self, index, place=0, quasiuniformizer=0):
         '''Return the ``index``-th lower ramification group at a point above infinity.'''
         if isinstance(quasiuniformizer, (int, Integer)):
-            uniformizer = self.quasiuniformizer(place, threshold=threshold)
+            uniformizer = self.quasiuniformizer(place)
         else:
             uniformizer = quasiuniformizer
 
@@ -477,7 +478,7 @@ class ArtinSchreierCover:
         '''Return lower ramification jumps at a point above infinity.'''
         stabilizer = self.stabilizer(place=place)
         if isinstance(quasiuniformizer, (int, Integer)):
-            uniformizer = self.quasiuniformizer(place, threshold=threshold)
+            uniformizer = self.quasiuniformizer(place)
         else:
             uniformizer = quasiuniformizer
 
