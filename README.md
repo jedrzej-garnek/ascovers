@@ -1,10 +1,9 @@
 # ascovers
 
 `ascovers` is a SageMath package for superelliptic curves and their
-`p`-group covers in characteristic `p`.
+`p`-group covers in characteristic `p`. The package was written by me a couple of years ago, and then rewritten using Codex to make the code look a bit better.
 
-The migrated package lives under `src/ascovers`.  The legacy Sage scripts are
-kept in `old/` while the package is rewritten module by module.
+The migrated package lives under `src/ascovers`.  The legacy Sage scripts are kept in `old/` while the package is rewritten module by module.
 
 ## Documentation
 

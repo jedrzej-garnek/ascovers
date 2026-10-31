@@ -651,8 +651,7 @@ class ArtinSchreierCover:
                 self.ith_ramification_group(
                     lower_jumps[index],
                     place=place,
-                    quasiuniformizer=quasiuniformizer,
-                    threshold=threshold,
+                    quasiuniformizer=quasiuniformizer
                 )
             )
             result.append(result[index - 1] + (lower_jumps[index] - lower_jumps[index - 1]) // denominator)
