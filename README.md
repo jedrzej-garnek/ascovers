@@ -9,7 +9,7 @@ The migrated package lives under `src/ascovers`.  The legacy Sage scripts are ke
 
 - [Superelliptic curves](docs/superelliptic.md)
 - [Artin-Schreier type covers](docs/as_covers.md)
-
+ 
 ## Quick Start
 
 Use the package from a SageMath Python environment:

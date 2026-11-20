@@ -944,5 +944,22 @@ class ArtinSchreierCover:
                     )
         return forms
 
+    def artin_character(self, element, place = 0):
+        '''Return Artin character of the curve at the given place at infinity at a given element.'''
+        if element != self.group.one:
+            t = self.uniformizer(place=place)
+            return -(t.group_action(element) - t).valuation(place=place)
+        else:
+            return -sum(self.artin_character(place=place, element = g) for g in self.group.elts if g != self.group.one)
 
+    def artin_conductor(self, character, gp_gp_dictionary, place = 0):
+                '''Return Artin conductor of the curve at the given place at infinity at a given character.
+                You need to provide a dictionary {group_element_of_this package : group_element of SageMath}'''
+                G = self.group
+                order_of_G = len(G.elts)
+                a = self.artin_character
+                e = gp_gp_dictionary[G.elt(G.elts[0])]
+                K = character(e).parent()
+                return 1/K(order_of_G)*sum(K(a(element, place=place))*character(gp_gp_dictionary[G.elt(element)]) for element in G.elts)
+                    
 as_cover = ArtinSchreierCover
