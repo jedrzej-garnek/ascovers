@@ -670,12 +670,12 @@ class ArtinSchreierCover:
         function_field, _polynomial_ring, x_coordinate, y_coordinate, z_coordinates = self.fct_field
         quotient_exponent = int(self.quotient.exponent)
         z_exponent_ranges = [range(int(self.characteristic)) for _index in range(self.height)]
-        vector_space = self.base_ring ** int(self.genus())
+        vector_space = self.base_ring ** int(len(holo_basis))
         span = vector_space.subspace([])
         result = []
         x_pole_power = 0
         from itertools import product
-        while len(result) < self.genus():
+        while len(result) < len(holo_basis):
             for y_denominator_power in range(0, quotient_exponent):
                 for z_exponents in product(*z_exponent_ranges):
                     expression = prod(

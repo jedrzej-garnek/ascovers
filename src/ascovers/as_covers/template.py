@@ -387,6 +387,42 @@ def A4_cover(function, zeta, prec=10):
         prec=prec,
     )
 
+def product_template(q, zeta):
+    '''Return the one-generator hypoelementary template, i.e. group Z/p x Z/(q-1)
+    '''
+    p = GF(q).characteristic()
+    cover_group = hypoelementary_group(p, q-1, 1)
+
+    def equations(z, f, _x, _y):
+        return [
+            _x ** (q - 1)
+        ]
+
+    def actions(z, f, x, y):
+        return [
+            [z[0], zeta * x, zeta * y],
+            [z[0] + 1, x, y]
+        ]
+
+    return CoverTemplate(1, GF(q), cover_group, equations, actions)
+
+def product_cover(q, prec=10):
+    '''Return the product cover defined by quotient functions.'''
+    from ascovers.as_covers.cover import ArtinSchreierCover
+    from ascovers.superelliptic.curve import SuperellipticCurve
+
+    R = PolynomialRing(GF(q), 'x')
+    x = R.gens()[0]
+    zeta = GF(q).multiplicative_generator()
+    quotient = SuperellipticCurve(x, 1)
+    return ArtinSchreierCover(
+        quotient,
+        product_template(q, zeta),
+        [quotient.x ** (q - 1)],
+        branch_points=[],
+        prec=prec,
+    )
+
 template = CoverTemplate
 witt_pol = witt_polynomial
 dihedreal_template = dihedral_template

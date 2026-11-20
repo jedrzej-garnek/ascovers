@@ -212,7 +212,7 @@ class ArtinSchreierFunction:
             for function in cohomology_basis
         ]
         target = [omega.serre_duality_pairing(self) for omega in holomorphic_forms]
-        vector_space = (cover.base_ring ** int(cover.genus())).span_of_basis(
+        vector_space = (cover.base_ring ** int(len(holomorphic_forms))).span_of_basis(
             [vector(cover.base_ring, row) for row in pairing_matrix]
         )
         return vector_space.coordinates(vector(cover.base_ring, target))
